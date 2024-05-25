@@ -22,6 +22,8 @@ export const getTypeormConfig = async () => {
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     });
     await connection.synchronize();
+    console.log('pg mem created');
+
     return connection.options;
   }
   return localTypeORMConfig;

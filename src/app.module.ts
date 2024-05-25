@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { getTypeormConfig } from './db/typeorm.config';
 import { getMongoURI } from './db/mongoose.config';
+import { ClassModule } from './module/class/class.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { getMongoURI } from './db/mongoose.config';
     MongooseModule.forRootAsync({
       useFactory: getMongoURI,
     }),
+    ClassModule,
   ],
   controllers: [AppController],
   providers: [AppService],
