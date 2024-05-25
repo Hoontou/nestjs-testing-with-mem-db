@@ -1,0 +1,16 @@
+version: '3'
+services:
+  mgdb:
+    image: mongo:latest
+    restart: always
+    ports:
+      - 27017:27017
+
+  pgdb:
+    image: postgres:latest
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
