@@ -7,5 +7,5 @@ export const startAsMemMongo = async () => {
   return { uri };
 };
 export const startAsLocalMongo = () => {
-  return { uri: 'mongodb://localhost:27017/tst' };
+  return 'mongodb://localhost:27017/tst';
 };

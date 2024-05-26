@@ -1,7 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { DataType, IBackup, IMemoryDb, newDb } from 'pg-mem';
-import { Connection } from 'typeorm';
+import { Connection, DataSource } from 'typeorm';
 
 export const localTypeORMConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -71,7 +71,7 @@ export const startAsMemPg = async () => {
   db.public.interceptQueries((queryText) => {
     if (
       queryText.search(
-        /(pg_views|pg_matviews|pg_tables|pg_enum|table_schema)/g,
+        /(pg_views|pg_matviews|pg_tables|pg_enum|table_schema)/g
       ) > -1
     ) {
       return [];
@@ -79,7 +79,7 @@ export const startAsMemPg = async () => {
     return null;
   });
 
-  const connection = await db.adapters.createTypeormConnection({
+  const dataSource: DataSource = await db.adapters.createTypeormDataSource({
     type: 'postgres',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     host: 'localhost',
@@ -96,7 +96,7 @@ export const startAsMemPg = async () => {
   // await connection.synchronize(); // 위 랑 마찬가지.
   console.log('pg mem created');
 
-  return connection.options;
+  return dataSource.options;
 };
 
 //근데 위 함수를 typeorm에게 넘겨버리면, 내가 원할때
