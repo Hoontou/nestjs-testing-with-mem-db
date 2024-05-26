@@ -1,7 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { DataType, IBackup, IMemoryDb, newDb } from 'pg-mem';
-import { Connection, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 export const localTypeORMConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -42,24 +42,24 @@ export const startAsMemPg = async () => {
 
   //일단 init단계에서는 아래 두개는 없어도 되는데?
   //실제쿼리 날려봐야 삭제해도 되는지 알수있을듯.
-  db.registerExtension('uuid-ossp', (schema) => {
-    schema.registerFunction({
-      name: 'uuid_generate_v4',
-      returns: DataType.uuid,
-      implementation: randomUUID,
-      impure: true,
-    });
-  });
+  // db.registerExtension('uuid-ossp', (schema) => {
+  //   schema.registerFunction({
+  //     name: 'uuid_generate_v4',
+  //     returns: DataType.uuid,
+  //     implementation: randomUUID,
+  //     impure: true,
+  //   });
+  // });
 
-  db.public.interceptQueries((sql) => {
-    const newSql = sql.replace(/\bnumeric\s*\(\s*\d+\s*,\s*\d+\s*\)/g, 'float');
-    if (sql !== newSql) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return db.public.many(newSql);
-    }
+  // db.public.interceptQueries((sql) => {
+  //   const newSql = sql.replace(/\bnumeric\s*\(\s*\d+\s*,\s*\d+\s*\)/g, 'float');
+  //   if (sql !== newSql) {
+  //     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  //     return db.public.many(newSql);
+  //   }
 
-    return null;
-  });
+  //   return null;
+  // });
 
   //기본 함수들에서 만들어진 SQL을 실행하는데, test환경에서는 필요없는것들임.
   //아래 단어를 포함하는 SQL을 싹다 그냥 실행헀다치는 인터셉터인듯?
@@ -68,16 +68,16 @@ export const startAsMemPg = async () => {
   //그에 맞는 동작을 하기위해 typeorm이 이미 세팅된 SQL을 디비에 날리는듯.
   //일단 인터셉터가 처리하게 해놓고, 저 특수옵션들을 지우는건 실제 테스트를 하면서
   //생각해볼 문제인듯.
-  db.public.interceptQueries((queryText) => {
-    if (
-      queryText.search(
-        /(pg_views|pg_matviews|pg_tables|pg_enum|table_schema)/g
-      ) > -1
-    ) {
-      return [];
-    }
-    return null;
-  });
+  // db.public.interceptQueries((queryText) => {
+  //   if (
+  //     queryText.search(
+  //       /(pg_views|pg_matviews|pg_tables|pg_enum|table_schema)/g
+  //     ) > -1
+  //   ) {
+  //     return [];
+  //   }
+  //   return null;
+  // });
 
   const dataSource: DataSource = await db.adapters.createTypeormDataSource({
     type: 'postgres',
@@ -87,7 +87,7 @@ export const startAsMemPg = async () => {
     username: 'postgres',
     password: 'postgres',
     database: 'postgres',
-    autoLoadEntities: true,
+    // autoLoadEntities: true,
     synchronize: true,
     dropSchema: true,
   });
@@ -108,37 +108,57 @@ export const startAsMemPg = async () => {
 //성능을 너무 잡아먹을듯..
 //깔끔하게, 추가모듈을 안만들고, 뭔 방법이 됐든 더러운 방법말고 ..
 
-export class PgTestHelper {
-  db: IMemoryDb;
-  connection: Connection;
-  backup: IBackup;
+export class PgMem {
+  private db: IMemoryDb;
+  private dataSource: DataSource;
+  private backup: IBackup;
 
-  async connect(entities?: any[]) {
-    this.db = newDb({ autoCreateForeignKeyIndices: true });
+  async connect() {
+    this.db = newDb();
+
     this.db.public.registerFunction({
       implementation: () => 'test',
       name: 'current_database',
     });
-    this.connection = await this.db.adapters.createTypeormConnection({
-      type: 'postgres',
-      entities: entities,
-      logger: 'advanced-console',
-      logging: true,
+    this.db.public.registerFunction({
+      implementation: () => 'version',
+      name: 'version',
     });
-    await this.sync();
-    this.backup = this.db.backup();
-    return this.connection;
+    this.dataSource = await this.db.adapters.createTypeormDataSource({
+      type: 'postgres',
+      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'postgres',
+      synchronize: true,
+      dropSchema: true,
+    });
+    return;
   }
 
   restore() {
     this.backup.restore();
+    return;
+  }
+
+  makeBackup() {
+    this.backup = this.db.backup();
+    return;
   }
 
   async disconnect() {
-    await this.connection.close();
+    await this.dataSource.destroy();
+    return;
   }
 
   async sync() {
-    await this.connection.synchronize();
+    await this.dataSource.synchronize();
+    return;
+  }
+
+  getConnectOptions() {
+    return this.dataSource.options;
   }
 }
