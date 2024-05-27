@@ -1,65 +1,61 @@
 import { TestingModule, Test } from '@nestjs/testing';
 import { UserTable } from './user.table';
 import { DataSource } from 'typeorm';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user.entity';
-import { startAsMemPg } from '../../../db/typeorm.config';
-
-//ㅋㅋ 나는 pg-mem가 제대로 작동하고있다고 생각했는데
-//사실은 pg-mem을 생성만 해놓고 로컬디비에 연결해 쓰고있었음.
-//그럼 도대체 typeorm에 pg-mem을 어떻게 연결하는건지
-//공식문서대로 똑같이 했는데도 오류를 뱉는데?
-//오류피해갈려고 options에 필요한 필드들을 정의하니까
-//그게 바로 로컬디비에 연결하는 options가 돼 버렸고, 그렇게 로컬디비를 쓰게됐음
-//미쳐버리겠네
+import { PgMem } from '../../../db/pg-mem';
 
 describe('UserTable', () => {
-  let service: UserTable;
-  let dataSource: DataSource;
+  let userTable: UserTable;
+  let pgMemInstance: PgMem;
 
   beforeAll(async () => {
+    pgMemInstance = new PgMem();
+    await pgMemInstance.init();
+
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRootAsync({ useFactory: startAsMemPg }),
-        TypeOrmModule.forFeature([User]),
+      providers: [
+        UserTable,
+
+        //raw SQL을 위한 DataSource 의존성 (테스트할 provider에서 안쓰면 없어도 됨.)
+        { provide: DataSource, useValue: pgMemInstance.getDataSource() },
+
+        //orm 사용을 위한 InjectRepository<User> 의존성
+        //PgMem에서 필요한 Repo 싹다 등록해놓고, 필요한것만 가져다 쓰기.
+        pgMemInstance.repositorys.User,
       ],
-      providers: [UserTable],
     }).compile();
 
-    service = module.get<UserTable>(UserTable);
-    dataSource = module.get<DataSource>(DataSource);
-    //위 dataSource 가져오는건 그냥 테스트 만을 위해선 필요없는데,
-    //테스트 수행 전 init 데이터 넣기위해서 + afterAll에서
-    //memdb destroy해주면 테스트 다 끝나자 마자 jest종료
-    //를 위해.
-  });
+    userTable = module.get<UserTable>(UserTable);
 
-  afterAll(async () => {
-    await dataSource.destroy();
-  });
-
-  beforeEach(async () => {
-    await dataSource.query(`
-      INSERT INTO "user" (email, password, "createdAt")
-      VALUES ('hoontou@gmail.com', 'test', NOW());
-    `);
+    //필요한 데이터 삽입, 아니면 아예 PgMem init에서
+    //기본 state 삽입하고, 백업까지 만들어도 될듯.
+    await pgMemInstance.query(`
+    INSERT INTO "user" (email, password, "createdAt")
+    VALUES ('hoontou@gmail.com', 'test', NOW());
+  `);
+    pgMemInstance.makeBackup();
   });
 
   afterEach(async () => {
-    await dataSource.query(`
-      DELETE FROM "user";
-    `);
+    pgMemInstance.restore();
   });
 
-  it('should create and retrieve a user', async () => {
+  afterAll(async () => {
+    //destroy해줘야 test완료시 즉시 끝남.
+    await pgMemInstance.destroy();
+  });
+
+  //raw sql, orm, 백업state로 restore까지 테스트.
+  it('should create and retrieve all', async () => {
     const dto = {
       email: 'hoontou2@gmail.com',
       password: 'test',
     };
 
-    await service.saveNewUser(dto);
+    /**save using orm */
+    await userTable.saveNewUser(dto);
 
-    const res = await service.getAll();
+    /**getAll using raw SQL */
+    const res = await userTable.getAll();
     console.log(res);
 
     expect(res[0].email).toBe('hoontou@gmail.com');
@@ -72,9 +68,11 @@ describe('UserTable', () => {
       password: 'test',
     };
 
-    await service.saveNewUser(dto);
+    /**save using orm */
+    await userTable.saveNewUser(dto);
 
-    const res = await service.getAll();
+    /**getAll using raw SQL */
+    const res = await userTable.getAll();
     console.log(res);
     expect(res[0].email).toBe('hoontou@gmail.com');
 
@@ -82,30 +80,3 @@ describe('UserTable', () => {
     expect(res[1].password).toBe(dto.password);
   });
 });
-
-//콘솔 결과가 아래처럼,
-//SELECT * 했을때 결과가 하나만 있는거 보면
-//제대로 INSERT, DELETE가 적절하게 일어나고 있음.
-//이미 써버런 primary id라서 2로 들어가긴 함.
-
-// console.log
-// [
-//   {
-//     id: 1,
-//     email: 'hoontou@gmail.com',
-//     password: 'test',
-//     createdAt: 2024-05-26T02:56:45.265Z
-//   }
-// ]
-
-//   at Object.<anonymous> (module/user/db/user.table.spec.ts:42:13)
-
-// console.log
-// [
-//   {
-//     id: 2,
-//     email: 'hoontou@gmail.com',
-//     password: 'test',
-//     createdAt: 2024-05-26T02:56:45.279Z
-//   }
-// ]
