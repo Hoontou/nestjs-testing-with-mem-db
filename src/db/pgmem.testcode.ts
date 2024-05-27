@@ -1,25 +1,10 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { randomUUID } from 'crypto';
-import { DataType, IBackup, IMemoryDb, newDb } from 'pg-mem';
-import { User } from 'src/module/user/db/user.entity';
-import { DataSource } from 'typeorm';
-
-export const localTypeORMConfig: TypeOrmModuleOptions = {
-  type: 'postgres',
-  host: 'localhost',
-  port: 5432,
-  username: 'postgres',
-  password: 'postgres',
-  database: 'postgres',
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: true,
-};
-
 //https://github.com/oguimbal/pg-mem/blob/master/samples/typeorm/simple.ts
-export const startAsLocalPg = () => {
-  return localTypeORMConfig;
-};
-export const startAsMemPg = async () => {
+
+import { newDb, IMemoryDb, IBackup } from 'pg-mem';
+import { DataSource } from 'typeorm';
+import { User } from '../module/user/db/user.entity';
+
+const startAsMemPg = async () => {
   const db = newDb();
 
   //pg-mem을 typeorm에 init하려면, 기본 함수들을
@@ -101,7 +86,7 @@ export const startAsMemPg = async () => {
 //성능을 너무 잡아먹을듯..
 //깔끔하게, 추가모듈을 안만들고, 뭔 방법이 됐든 더러운 방법말고 ..
 
-export class PgMem {
+class PgMem {
   private db: IMemoryDb;
   private dataSource: DataSource;
   private backup: IBackup;

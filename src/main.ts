@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { pgdb } from './db/pg';
-import { PgTestHelper } from './db/typeorm.config';
+import { PgMem } from './db/typeorm.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +15,8 @@ async function bootstrap() {
     }
   });
 
-  // const pgTest = new PgTestHelper();
-  // pgTest.connect();
+  // const pgMemInstance = new PgMem();
+  // await pgMemInstance.connect();
+  // await pgMemInstance.tst();
 }
 bootstrap();
