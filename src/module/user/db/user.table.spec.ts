@@ -7,19 +7,21 @@ import { User } from './user.entity';
 describe('UserTable', () => {
   let userTable: UserTable;
   let pgMemInstance: PgMem;
-  //직접 DB작업을 하고싶으면,
+  //직접 DB작업을 orm으로 하고싶으면,
   // let userRepository: Repository<User>;
 
   beforeAll(async () => {
     pgMemInstance = await startPgMem();
 
+    //직접 DB작업을 orm으로 하고싶으면,
+    // userRepository = pgMemInstance.repositorys.User
+    //   .useValue as Repository<User>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserTable,
-
         //raw SQL을 위한 DataSource 의존성 (테스트할 provider에서 안쓰면 없어도 됨.)
         { provide: DataSource, useValue: pgMemInstance.getDataSource() },
-
         //orm 사용을 위한 InjectRepository<User> 의존성
         //PgMem에서 필요한 Repo 싹다 등록해놓고, 필요한것만 가져다 쓰기.
         pgMemInstance.repositorys['User'],
@@ -27,10 +29,6 @@ describe('UserTable', () => {
     }).compile();
 
     userTable = module.get<UserTable>(UserTable);
-
-    //직접 DB작업을 하고싶으면,
-    // userRepository = pgMemInstance.repositorys.User
-    //   .useValue as Repository<User>;
 
     //필요한 데이터 삽입, 아니면 아예 PgMem init에서
     //기본 state 삽입하고, 백업까지 만들어도 될듯.

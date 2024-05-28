@@ -2,23 +2,23 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { TestingModule, Test } from '@nestjs/testing';
 import { ClassCollection } from './class.collection';
 import { ClassDocument, RoomDocument } from './class.schema';
-import { MongoMem, startMongoMem } from '../../../db/mongoose.config';
 import { Model } from 'mongoose';
+import { MongoMem, startMongoMem } from '../../../db/mongo-mem';
 
 describe('ClassCollection', () => {
   let classCollection: ClassCollection;
   let mongoMem: MongoMem;
 
-  //직접 DB작업을 하고싶으면,
-  // let classModel: Model<ClassDocument>;
-  // let roomModel: Model<RoomDocument>;
+  //직접 DB작업을 하고싶으면, 필요없으면 빼도 됨.
+  let classModel: Model<ClassDocument>;
+  let roomModel: Model<RoomDocument>;
 
   beforeAll(async () => {
     mongoMem = await startMongoMem();
 
-    //직접 DB작업을 하고싶으면,
-    // classModel = mongoMem.models.class.useValue;
-    // roomModel = mongoMem.models.room.useValue;
+    //직접 DB작업을 하고싶으면, 필요없으면 빼도 됨.
+    classModel = mongoMem.models.class.useValue;
+    roomModel = mongoMem.models.room.useValue;
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [MongooseModule.forRoot(mongoMem.uri)],
@@ -30,6 +30,7 @@ describe('ClassCollection', () => {
   });
 
   afterAll(async () => {
+    //destroy해줘야 test완료시 즉시 끝남.
     await mongoMem.destroy();
   });
 
@@ -49,26 +50,26 @@ describe('ClassCollection', () => {
       expect(getAllRes[0].teacher.name).toEqual(teacherName);
     });
 
-    // 직접 DB작업을 하고싶으면,
-    //   it('tst model directly', async () => {
-    //     const teacher2 = {
-    //       name: '김동수',
-    //     };
+    //직접 DB작업을 하고싶으면, 필요없으면 빼도 됨.
+    it('tst model directly', async () => {
+      const teacher2 = {
+        name: '김동수',
+      };
 
-    //     const classForm = {
-    //       className: '영어',
-    //       teacher: teacher2,
-    //     };
+      const classForm = {
+        className: '영어',
+        teacher: teacher2,
+      };
 
-    //     const newClass = new classModel(classForm);
-    //     await newClass.save();
+      const newClass = new classModel(classForm);
+      await newClass.save();
 
-    //     const getAllRes = await classCollection.getAll();
-    //     console.log(getAllRes);
-    //     expect(getAllRes[0].className).toEqual(className);
-    //     expect(getAllRes[0].teacher.name).toEqual(teacherName);
-    //     expect(getAllRes[1].className).toEqual(classForm.className);
-    //     expect(getAllRes[1].teacher.name).toEqual(classForm.teacher.name);
-    //   });
+      const getAllRes = await classCollection.getAll();
+      console.log(getAllRes);
+      expect(getAllRes[0].className).toEqual(className);
+      expect(getAllRes[0].teacher.name).toEqual(teacherName);
+      expect(getAllRes[1].className).toEqual(classForm.className);
+      expect(getAllRes[1].teacher.name).toEqual(classForm.teacher.name);
+    });
   });
 });

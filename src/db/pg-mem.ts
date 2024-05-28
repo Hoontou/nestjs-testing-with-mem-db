@@ -35,7 +35,7 @@ export class PgMem {
     this.initRepositorys();
   }
 
-  /**엔티티 종류가 별로 없으면 수동으로 하는게 타입가드 받을 수 있어서 좋을듯. */
+  /**엔티티 종류가 별로 없으면 수동으로 하는것도 타입가드 정확해서 좋을듯.*/
   initRepositorysManually() {
     const userRepository: Repository<User> =
       this.dataSource.getRepository(User);
@@ -48,7 +48,7 @@ export class PgMem {
     };
     return;
   }
-  /**auto load, mongoose와는 다르게 typeorm은 자동으로 엔티티를 긁어오니까 가능, 타입가드는 못받음. */
+  /**auto load, mongoose와는 다르게 typeorm은 자동으로 엔티티를 긁어오니까 가능 */
   initRepositorys() {
     const entityMetadatas = this.dataSource.entityMetadatas;
     entityMetadatas.forEach((metadata) => {
