@@ -2,18 +2,29 @@ import { IMemoryDb, IBackup, newDb } from 'pg-mem';
 import { DataSource, Repository, BaseEntity } from 'typeorm';
 import { User } from '../module/user/db/user.entity';
 
+export const startPgMem = async (): Promise<PgMem> => {
+  const pgMemInstance = new PgMem();
+  await pgMemInstance.init();
+
+  return pgMemInstance;
+};
+
 //https://github.com/oguimbal/pg-mem/blob/master/samples/typeorm/simple.ts
 export class PgMem {
   private db: IMemoryDb;
   private dataSource: DataSource;
   private backup: IBackup;
   public repositorys: {
-    User: { provide: string; useValue: Repository<BaseEntity> };
-  };
+    [key: string]: { provide: string; useValue: Repository<BaseEntity> };
+  } = {};
+  //manually
+  // public repositorys: {
+  //   User: { provide: string; useValue: Repository<BaseEntity> };
+  // };
 
   async init() {
     this.db = newDb();
-    this.resisterMockFunc();
+    this.registerMockFunc();
     this.dataSource = await this.db.adapters.createTypeormDataSource({
       type: 'postgres',
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
@@ -24,7 +35,8 @@ export class PgMem {
     this.initRepositorys();
   }
 
-  initRepositorys() {
+  /**엔티티 종류가 별로 없으면 수동으로 하는게 타입가드 받을 수 있어서 좋을듯. */
+  initRepositorysManually() {
     const userRepository: Repository<User> =
       this.dataSource.getRepository(User);
 
@@ -36,8 +48,27 @@ export class PgMem {
     };
     return;
   }
+  /**auto load, mongoose와는 다르게 typeorm은 자동으로 엔티티를 긁어오니까 가능, 타입가드는 못받음. */
+  initRepositorys() {
+    const entityMetadatas = this.dataSource.entityMetadatas;
+    entityMetadatas.forEach((metadata) => {
+      //둘다 작동.
+      const entity = metadata.target;
+      // const entity = metadata.tableMetadataArgs.target
+      // console.log(User === entity)
 
-  resisterMockFunc() {
+      const entityName = metadata.targetName;
+      const repository: Repository<BaseEntity> =
+        this.dataSource.getRepository(entity);
+
+      this.repositorys[entityName] = {
+        provide: `${entityName}Repository`,
+        useValue: repository,
+      };
+    });
+  }
+
+  registerMockFunc() {
     this.db.public.registerFunction({
       implementation: () => 'test',
       name: 'current_database',

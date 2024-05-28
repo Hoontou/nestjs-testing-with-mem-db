@@ -12,6 +12,27 @@ export class ClassCollection {
     public readonly roomModel: Model<RoomDocument>
   ) {}
 
+  async save(className: string, teacherName: string) {
+    const teacher: Teacher = {
+      name: teacherName,
+    };
+
+    const classForm: Partial<Class> = {
+      className,
+      teacher,
+    };
+
+    const newClass = new this.classModel(classForm);
+    const result = await newClass.save();
+
+    return result;
+  }
+
+  async getAll() {
+    const all = await this.classModel.find();
+    return all;
+  }
+
   //이게 참 이상한게, class정의 에서는 컬렉션 이름을 내가 지정한대로 들어가고,
   //모듈에서 스키마 주입을 위해 name을 내가그냥 Room으로 넣어버려도
   //populate하기 위해서는 소문자 room으로 아래와 같이 해야한다.

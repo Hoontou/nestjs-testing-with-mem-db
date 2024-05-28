@@ -1,15 +1,17 @@
 import { TestingModule, Test } from '@nestjs/testing';
 import { UserTable } from './user.table';
-import { DataSource } from 'typeorm';
-import { PgMem } from '../../../db/pg-mem';
+import { DataSource, Repository } from 'typeorm';
+import { PgMem, startPgMem } from '../../../db/pg-mem';
+import { User } from './user.entity';
 
 describe('UserTable', () => {
   let userTable: UserTable;
   let pgMemInstance: PgMem;
+  //직접 DB작업을 하고싶으면,
+  // let userRepository: Repository<User>;
 
   beforeAll(async () => {
-    pgMemInstance = new PgMem();
-    await pgMemInstance.init();
+    pgMemInstance = await startPgMem();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -20,11 +22,15 @@ describe('UserTable', () => {
 
         //orm 사용을 위한 InjectRepository<User> 의존성
         //PgMem에서 필요한 Repo 싹다 등록해놓고, 필요한것만 가져다 쓰기.
-        pgMemInstance.repositorys.User,
+        pgMemInstance.repositorys['User'],
       ],
     }).compile();
 
     userTable = module.get<UserTable>(UserTable);
+
+    //직접 DB작업을 하고싶으면,
+    // userRepository = pgMemInstance.repositorys.User
+    //   .useValue as Repository<User>;
 
     //필요한 데이터 삽입, 아니면 아예 PgMem init에서
     //기본 state 삽입하고, 백업까지 만들어도 될듯.

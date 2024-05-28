@@ -1,4 +1,4 @@
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from './user.entity';
@@ -10,7 +10,8 @@ export class UserTable {
     @InjectRepository(User)
     public readonly orm: Repository<User>,
     //raw SQL 테스트를 위해
-    @InjectDataSource() private readonly dataSource: DataSource
+    // @InjectDataSource()
+    private readonly dataSource: DataSource
   ) {}
 
   /**save using orm */

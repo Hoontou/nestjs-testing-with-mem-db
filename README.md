@@ -8,15 +8,15 @@
 먼저,
 
 1- jest 기본 사용법 뚝딱 다시 해보고,
-https://github.com/Hoontou/jestHandling
+https://github.com/Hoontou/jestHandling 완.
 
-2- docker로 몽고, pgdb 개발용으로 셋업하고,
+2- docker로 몽고, pgdb 개발용으로 셋업하고, 완.
 
 3- pg-mem typeorm
-mongodb-memory-server mongoose 테스트 용으로 셋업하고
+mongodb-memory-server mongoose 테스트 용으로 셋업하고 완.
 
-4- 임의 스키마, 테이블 짠 후 테스트환경에서 전역에서 mock데이터 넣고
-5- 각각 유닛테스트에서 잘 사용되는지,
+4- 임의 스키마, 테이블 짠 후 테스트환경에서 전역에서 mock데이터 넣고 완
+5- 각각 유닛테스트에서 잘 사용되는지, 완.
 
 6- 모의 개발 연습까지.
 

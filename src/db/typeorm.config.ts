@@ -11,6 +11,6 @@ export const localTypeORMConfig: TypeOrmModuleOptions = {
   synchronize: true,
 };
 
-export const startAsLocalPg = () => {
+export const getTypeormConfig = () => {
   return localTypeORMConfig;
 };
